@@ -8,29 +8,33 @@
 
 class Button
 {
-    public:
-        enum class State : uint8_t
-        {
-            kPressed = 0,
-            kReleased
-        };
+public:
+    enum class State : uint8_t
+    {
+        kIdle = 0,
+        kDebounce,
+        kPressed, 
+        kHeld, 
+        kReleased
+    };
 
-        void Init(void);
-        uint8_t ResetPinGetLevel();
-        State GetState(void);
-        
-    private:
-        friend Button & ButtonMgr(void);
-        static Button sButton;
+    Button(gpio_num_t gpioButton, const char* taskName, UBaseType_t taskPriority, uint16_t taskStackSize);
 
-        rf_pi4ioe5v9554_pin_num_t    mGpioButton;
-        State                        mState;
+    void Init(void);
 
-        void SetState(State);
-        static void ButtonTask(void* pvParameter);
+    State GetButtonState(void);
+    uint8_t ReadPinLevel();
+
+private:
+    gpio_num_t      mGpioButton;
+    const char*     mTaskName;
+    UBaseType_t     mTaskPriority;
+    uint16_t        mTaskStackSize;
+
+    TaskHandle_t    mButtonTaskHandle;
+
+    State           mState;
+
+    void SetButtonState(State);
+    static void ButtonTask(void* pvParameter);
 };
-
-inline Button & ButtonMgr(void)
-{
-    return Button::sButton;
-}

@@ -4,13 +4,6 @@
 
 static const char *TAG = "Led";
 
-Led Led::sLed;
-
-namespace
-{
-    TaskHandle_t sLedTaskHandle;
-}
-
 void Led::LedTask(void *pvParameter)
 {
     Led *self = (Led *)pvParameter;
@@ -22,7 +15,7 @@ void Led::LedTask(void *pvParameter)
 
     while (true)
     {
-        State currentState = self->GetState();
+        State currentState = self->GetLedState();
 
         if (currentState != lastState)
         {
@@ -48,7 +41,7 @@ void Led::LedTask(void *pvParameter)
         if (currentState == State::sBlink)
         {
             int blinkPeriodTicks = 0;
-            switch (self->GetBlinkFreq())
+            switch (self->GetLedBlinkFreq())
             {
                 case BlinkFreq::Freq250ms: blinkPeriodTicks = 1; break;
                 case BlinkFreq::Freq500ms: blinkPeriodTicks = 2; break;
@@ -62,7 +55,6 @@ void Led::LedTask(void *pvParameter)
             {
                 ledLevel = !ledLevel;
                 gpio_set_level(self->mGpioLed, ledLevel);
-                ESP_LOGI(TAG, "BLINK TOGGLE [%d]: %d", tickCounter, ledLevel);
             }
 
             tickCounter = (tickCounter > 100) ? 0 : tickCounter + 1;
@@ -72,22 +64,22 @@ void Led::LedTask(void *pvParameter)
     }
 }
 
-Led::State Led::GetState(void)
+Led::State Led::GetLedState(void)
 {
     return mState;
 }
 
-void Led::SetState(Led::State state)
+void Led::SetLedState(Led::State state)
 {
     mState = state;
 }
 
-Led::BlinkFreq Led::GetBlinkFreq(void)
+Led::BlinkFreq Led::GetLedBlinkFreq(void)
 { 
     return mBlinkFreq;  
 }
 
-void Led::SetBlinkFreq(Led::BlinkFreq freq)
+void Led::SetLedBlinkFreq(Led::BlinkFreq freq)
 { 
     mBlinkFreq = freq;
 }
@@ -100,21 +92,27 @@ void Led::init_led(gpio_num_t led)
 
 void Led::Init(void)
 {
-    esp_err_t err = ESP_OK;
-
-    mGpioLed = LED_GPIO;
-
     init_led(mGpioLed);
-    SetState(State::sBlink);
-    SetBlinkFreq(BlinkFreq::Freq1s);
+    
+    SetLedState(State::sOff);
+    SetLedBlinkFreq(BlinkFreq::Freq1s);
 
-    if (ESP_OK == err)
+    BaseType_t result = xTaskCreate(LedTask, mTaskName, mTaskStackSize, this, mTaskPriority, &mLedTaskHandle);
+
+    if (result != pdPASS)
     {
-        // Create Task
-        xTaskCreate(LedTask, BUTTON_TASK_NAME, BUTTON_TASK_STACK_SIZE, this, BUTTON_TASK_PRIORITY, &sLedTaskHandle);
+        printf("Failed to create LED task for GPIO %d\n", mGpioLed);
+        ESP_LOGE(TAG, "Failed to create LED task for GPIO %d\n", mGpioLed);
     }
-    else
-    {
-        ESP_LOGE(TAG, "Create button task failed !");
-    }
+}
+
+Led::Led(gpio_num_t gpioLed, const char* taskName, UBaseType_t taskPriority, uint16_t taskStackSize): 
+      mGpioLed(gpioLed),
+      mTaskName(taskName),
+      mTaskPriority(taskPriority),
+      mTaskStackSize(taskStackSize),
+      mLedTaskHandle(nullptr),
+      mState(State::sOff),
+      mBlinkFreq(BlinkFreq::Freq1s)
+{
 }

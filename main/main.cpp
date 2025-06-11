@@ -7,6 +7,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 
+#include "HWConfig.h"
 #include "led.h"
 #include "button.h"
 
@@ -16,50 +17,98 @@ static const char* TAG = "main";
 
 static int s_led_state = 0; 
 
-
-static void blink_led(void)
-{
-    gpio_set_level(LED_RED, s_led_state); 
-}
-
-static void configure_led(void)
-{
-    ESP_LOGI(TAG, "Example configured to blink GPIO LED!");
-    gpio_reset_pin(LED_RED);
-    gpio_set_direction(LED_RED, GPIO_MODE_OUTPUT);
-}
-
 extern "C" void app_main(void)
 {
-    configure_led();
     ESP_LOGI(TAG, "Starting LED blink example...");
 
     static int test_state = 0;
     [[maybe_unused]] static int test_state_2 = 0;
     
-    LedMgr().Init();
-    //ButtonMgr().Init();
+    Led yelLed(YELLOW_LED, YELLOW_LED_TASK_NAME, YELLOW_LED_TASK_PRIORITY, YELLOW_LED_TASK_STACK_SIZE);
+    yelLed.Init();
 
-    LedMgr().SetState(Led::State::sOff); 
+    Led redLed(RED_LED, RED_LED_TASK_NAME, RED_LED_TASK_PRIORITY, RED_LED_TASK_STACK_SIZE);
+    redLed.Init();
+
+    Button Key1Button(KEY1_GPIO, KEY1_TASK_NAME, KEY1_TASK_PRIORITY, KEY1_TASK_STACK_SIZE);
+    Key1Button.Init();
+
+    Button Key2Button(KEY2_GPIO, KEY2_TASK_NAME, KEY2_TASK_PRIORITY, KEY2_TASK_STACK_SIZE);
+    Key2Button.Init();
+
+    yelLed.SetLedState(Led::State::sOff); 
     vTaskDelay(3000 / portTICK_PERIOD_MS);
 
-    LedMgr().SetState(Led::State::sOn); 
+    yelLed.SetLedState(Led::State::sOn); 
     vTaskDelay(3000 / portTICK_PERIOD_MS);
 
-    LedMgr().SetState(Led::State::sOff); 
+    yelLed.SetLedState(Led::State::sOff); 
     vTaskDelay(3000 / portTICK_PERIOD_MS);
-
-    LedMgr().SetState(Led::State::sBlink); 
-    // LedMgr().SetBlinkFreq((Led::BlinkFreq)0); 
-    // vTaskDelay(3000 / portTICK_PERIOD_MS);
 
     while (1) {
-        ESP_LOGI(TAG, "Turning the LED %s!", s_led_state == true ? "ON1" : "OFF");
-        blink_led();
-        s_led_state = !s_led_state;
-        LedMgr().SetBlinkFreq((Led::BlinkFreq)test_state); 
-        vTaskDelay(20000 / portTICK_PERIOD_MS);
-        test_state++; 
-        if(test_state > 4) test_state = 0; 
+
+        // TEST 1 
+        // ESP_LOGI(TAG, "Turning the LED %s!", s_led_state == true ? "ON1" : "OFF");
+        // s_led_state = !s_led_state;
+        // yelLed.SetLedBlinkFreq((Led::BlinkFreq)test_state); 
+        // redLed.SetLedBlinkFreq((Led::BlinkFreq)(test_state+1)); 
+        // vTaskDelay(20000 / portTICK_PERIOD_MS);
+        // test_state++; 
+        // if(test_state > 4) test_state = 0; 
+
+        // TEST 2
+        
+        static Button::State prevStateKey1 = Button::State::kIdle;
+        static Button::State prevStateKey2 = Button::State::kIdle;
+        Button::State currentStateKey1 = Key1Button.GetButtonState();
+        Button::State currentStateKey2 = Key2Button.GetButtonState();
+
+        if (currentStateKey1 == Button::State::kPressed && prevStateKey1 != Button::State::kPressed)
+        {
+            Led::State state = redLed.GetLedState();
+            if (state == Led::State::sOff || state == Led::State::sBlink)
+            {
+                redLed.SetLedState(Led::State::sOn);
+                ESP_LOGI(TAG, "KEY1_ON");
+            }
+            else
+            {
+                redLed.SetLedState(Led::State::sOff);
+                ESP_LOGI(TAG, "KEY1_OFF");
+            }
+        }
+        else if (currentStateKey1 == Button::State::kHeld && prevStateKey1 != Button::State::kHeld)
+        {
+            redLed.SetLedState(Led::State::sBlink);
+            redLed.SetLedBlinkFreq((Led::BlinkFreq)0);
+            ESP_LOGI(TAG, "KEY1_BLINK");
+        }
+
+        if (currentStateKey2 == Button::State::kPressed && prevStateKey2 != Button::State::kPressed)
+        {
+            Led::State state = yelLed.GetLedState();
+            if (state == Led::State::sOff || state == Led::State::sBlink)
+            {
+                yelLed.SetLedState(Led::State::sOn);
+                ESP_LOGI(TAG, "KEY2_ON");
+            }
+            else
+            {
+                yelLed.SetLedState(Led::State::sOff);
+                ESP_LOGI(TAG, "KEY2_OFF");
+            }
+        }
+        else if (currentStateKey2 == Button::State::kHeld && prevStateKey2 != Button::State::kHeld)
+        {
+            yelLed.SetLedState(Led::State::sBlink);
+            yelLed.SetLedBlinkFreq((Led::BlinkFreq)0);
+            ESP_LOGI(TAG, "KEY2_BLINK");
+        }
+
+        prevStateKey1 = currentStateKey1;
+        prevStateKey2 = currentStateKey2;
+
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+
     }
 }

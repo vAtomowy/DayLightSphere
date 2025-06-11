@@ -1,81 +1,141 @@
 #include "button.h"
-#include "pi4ioe5v9554.h"
 #include "esp_log.h"
+#include "HWConfig.h"
 
 static const char* TAG = "Button";
 
-Button Button::sButton;
-
-namespace {
-    TaskHandle_t sButtonTaskHandle;
-}
-
 void Button::ButtonTask(void* pvParameter)
 {
-    Button* self  = (Button*)pvParameter;
-    uint8_t lastLevel = 0;
+    Button *self = (Button *)pvParameter;
 
-    ESP_LOGI(TAG, "Button Task started");
+    ESP_LOGI(TAG, "Button task started");
+
+    const TickType_t loopDelay = pdMS_TO_TICKS(30);
+    const TickType_t holdThreshold = pdMS_TO_TICKS(1890);
+
+    bool wasHeld = false;
+
+    static uint8_t cnt; 
+    static uint8_t state;
+
     while (true)
     {
-        if(self->ResetPinGetLevel() == 0)
+        uint8_t level = self->ReadPinLevel();
+
+        switch(self->GetButtonState())  
         { 
-            vTaskDelay(pdMS_TO_TICKS(50));
-            if(self->ResetPinGetLevel() == 0)
+            case State::kIdle: 
             { 
-                self->SetState(State::kPressed); 
-                ESP_LOGD(TAG, "Button Pressed !");
+                if (level == 0)
+                {
+                    self->SetButtonState(State::kDebounce);
+                }
+                else
+                { 
+                    // nothing
+                }  
             }
-            else 
+            break; 
+
+            case State::kDebounce: 
             { 
-                self->SetState(State::kReleased); 
-                ESP_LOGD(TAG, "Button Released !");
+                if (level == 0)
+                {
+                    cnt = 0; 
+                    self->SetButtonState(State::kPressed);
+                }
+                else
+                { 
+                    self->SetButtonState(State::kIdle);
+                }  
             }
+            break; 
+
+            case State::kPressed: 
+            { 
+                if (level == 0)
+                {
+                    cnt++; 
+                    if (cnt > 63) // ~1890ms / 30ms
+                    {
+                        self->SetButtonState(State::kHeld);
+                        wasHeld = true;
+                    }
+                }
+                else
+                { 
+                    self->SetButtonState(State::kReleased);
+                }  
+            }
+            break;
+
+            case State::kHeld:
+            {
+                if (level != 0)
+                {
+                    self->SetButtonState(State::kReleased);
+                }
+                // else: nadal trzymany – nic nie rób
+            }
+            break;
+
+            case State::kReleased:
+            {
+                if (wasHeld)
+                {
+                    ESP_LOGI(TAG, "Button was held");
+                    wasHeld = false;
+                }
+                else
+                {
+                    ESP_LOGI(TAG, "Button was clicked");
+                }
+
+                cnt = 0;
+                self->SetButtonState(State::kIdle);
+            }
+            break;
         }
-        else
-        { 
-            self->SetState(State::kReleased); 
-            ESP_LOGD(TAG, "Button Released !");
-        }
-        vTaskDelay(pdMS_TO_TICKS(500));
+
+        vTaskDelay(loopDelay);
     }
 }
 
-uint8_t Button::ResetPinGetLevel()
+uint8_t Button::ReadPinLevel()
 {
-    uint8_t levels;
-    rf_pi4ioe5v9554_pin_get_level(PORT_EXPANDER_INSTANCE_ID, &levels, pdMS_TO_TICKS(100));
-                
-    uint8_t mask = 1 << 6;
-    return (levels & mask) != 0;
+    return gpio_get_level(mGpioButton);
 }
 
-Button::State Button::GetState(void)
+Button::State Button::GetButtonState(void)
 {
     return mState;
 }
 
-void Button::SetState(Button::State state)
+void Button::SetButtonState(Button::State state)
 {
     mState = state;
 }
 
 void Button::Init(void)
 {
-    esp_err_t err = ESP_OK; 
+    gpio_reset_pin(mGpioButton);
+    gpio_set_direction(mGpioButton, GPIO_MODE_INPUT);
+    gpio_pulldown_dis(mGpioButton);
+    gpio_pullup_en(mGpioButton); 
 
-    mGpioButton = BUTTON_GPIO;
-
-    ESP_ERROR_CHECK(rf_pi4ioe5v9554_pin_cfg_mode(PORT_EXPANDER_INSTANCE_ID, mGpioButton, RF_PI4IOE5V9554_PIN_MODE_INPUT, pdMS_TO_TICKS(100)));
-
-    if (ESP_OK == err)
+    BaseType_t result = xTaskCreate(ButtonTask, mTaskName, mTaskStackSize, this, mTaskPriority, &mButtonTaskHandle);
+    if (result != pdPASS)
     {
-        // Create Task
-        xTaskCreate(ButtonTask, BUTTON_TASK_NAME, BUTTON_TASK_STACK_SIZE, this, BUTTON_TASK_PRIORITY, &sButtonTaskHandle);
+        ESP_LOGE(TAG, "Failed to create Button task for GPIO %d", mGpioButton);
     }
-    else 
-    { 
-        ESP_LOGE(TAG, "Create button task failed !");
-    }
+}
 
+Button::Button(gpio_num_t gpioButton, const char* taskName, UBaseType_t taskPriority, uint16_t taskStackSize)
+    : mGpioButton(gpioButton),
+      mTaskName(taskName),
+      mTaskPriority(taskPriority),
+      mTaskStackSize(taskStackSize),
+      mButtonTaskHandle(nullptr),
+      mState(State::kReleased)
+{
 }

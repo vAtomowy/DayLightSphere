@@ -13,8 +13,33 @@
 
 #include "pi4ioe5v9554.h"
 
+#define YELLOW_LED                      GPIO_NUM_7
+#define YELLOW_LED_TASK_NAME            "Yellow_LED"
+#define YELLOW_LED_TASK_STACK_SIZE      (4096)
+#define YELLOW_LED_TASK_PRIORITY        (10)
+
+#define RED_LED                         GPIO_NUM_6
+#define RED_LED_TASK_NAME               "Red_LED"
+#define RED_LED_TASK_STACK_SIZE         (4096)
+#define RED_LED_TASK_PRIORITY           (10)
+
+#define KEY1_GPIO                       GPIO_NUM_9
+#define KEY1_TASK_NAME                  "Key1"
+#define KEY1_TASK_STACK_SIZE            (4096)
+#define KEY1_TASK_PRIORITY              (10)
+
+#define KEY2_GPIO                       GPIO_NUM_8
+#define KEY2_TASK_NAME                  "Key2"
+#define KEY2_TASK_STACK_SIZE            (4096)
+#define KEY2_TASK_PRIORITY              (10)
+
+
+
 #define BUTTON_GPIO             RF_PI4IOE5V9554_PIN_NUM_6
-#define LED_GPIO                GPIO_NUM_7
+
+#define BUTTON_TASK_NAME                "Button"
+#define BUTTON_TASK_STACK_SIZE          (4096)
+#define BUTTON_TASK_PRIORITY            (10)
 
 #define PORT_EXPANDER_INSTANCE_ID 0                                            // OK
 #define PORT_EXPANDER_I2C_NUM     0                                            // OK
@@ -22,10 +47,8 @@
 #define PORT_EXPANDER_I2C_SDA     MIXER_SDA_GPIO                               // OK
 #define PORT_EXPANDER_I2C_SCL     MIXER_SCL_GPIO                               // OK
 
-#define BUTTON_TASK_NAME                "Button"
-#define BUTTON_TASK_STACK_SIZE          (4096)
-#define BUTTON_TASK_PRIORITY            (10)
-
 #define ERROR_TASK_NAME                 "Error"
 #define ERROR_TASK_STACK_SIZE           (4096) 
 #define ERROR_TASK_PRIORITY             (10) 
+
+
