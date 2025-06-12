@@ -10,6 +10,7 @@
 #include "HWConfig.h"
 #include "led.h"
 #include "button.h"
+#include "driver.h"
 
 #define LED_RED GPIO_NUM_6
 
@@ -23,6 +24,8 @@ extern "C" void app_main(void)
 
     static int test_state = 0;
     [[maybe_unused]] static int test_state_2 = 0;
+
+    uint32_t duty = 0;
     
     Led yelLed(YELLOW_LED, YELLOW_LED_TASK_NAME, YELLOW_LED_TASK_PRIORITY, YELLOW_LED_TASK_STACK_SIZE);
     yelLed.Init();
@@ -35,6 +38,12 @@ extern "C" void app_main(void)
 
     Button Key2Button(KEY2_GPIO, KEY2_TASK_NAME, KEY2_TASK_PRIORITY, KEY2_TASK_STACK_SIZE);
     Key2Button.Init();
+
+    Driver Pwm1Driver(DRV1_GPIO, DRV1_TASK_NAME, DRV1_TASK_PRIORITY, DRV1_TASK_STACK_SIZE);
+    Pwm1Driver.Init();
+
+    Driver Pwm2Driver(DRV2_GPIO, DRV2_TASK_NAME, DRV2_TASK_PRIORITY, DRV2_TASK_STACK_SIZE);
+    Pwm2Driver.Init();
 
     yelLed.SetLedState(Led::State::sOff); 
     vTaskDelay(3000 / portTICK_PERIOD_MS);
@@ -57,7 +66,6 @@ extern "C" void app_main(void)
         // if(test_state > 4) test_state = 0; 
 
         // TEST 2
-        
         static Button::State prevStateKey1 = Button::State::kIdle;
         static Button::State prevStateKey2 = Button::State::kIdle;
         Button::State currentStateKey1 = Key1Button.GetButtonState();
@@ -108,7 +116,15 @@ extern "C" void app_main(void)
         prevStateKey1 = currentStateKey1;
         prevStateKey2 = currentStateKey2;
 
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        // Pwm1Driver.SetDriverEnable(true);
+        // Pwm2Driver.SetDriverEnable(true);
+        
+        // Pwm1Driver.SetPwm(duty);
+        // Pwm2Driver.SetPwm(duty);
+        // duty++; 
+        // if(duty > 1023) duty = 0;
+
+        vTaskDelay(50 / portTICK_PERIOD_MS);
 
     }
 }

@@ -3,6 +3,7 @@
 set (src    "./main.cpp"
             "./led.cpp"
             "./button.cpp"
+            "./driver.cpp"
             "./pi4ioe5v9554.c"
     )
 
