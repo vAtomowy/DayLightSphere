@@ -10,20 +10,16 @@ void Driver::DriverTask(void* pvParameter)
 
     ESP_LOGI(TAG, "Driver task started on GPIO");
 
-    while (true)
+    while (true) 
     {
-        if (self->DriverIsEnabled())
-        {
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, self->mDuty);
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+        if (self->DriverIsEnabled()) {
+            ledc_set_duty(LEDC_LOW_SPEED_MODE, self->mPwmChannel, self->mDuty);
+            ledc_update_duty(LEDC_LOW_SPEED_MODE, self->mPwmChannel);
+        } else {
+            ledc_set_duty(LEDC_LOW_SPEED_MODE, self->mPwmChannel, 0);
+            ledc_update_duty(LEDC_LOW_SPEED_MODE, self->mPwmChannel);
         }
-        else
-        {
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }
 
@@ -59,7 +55,7 @@ void Driver::InitPwm()
     ledc_channel_config_t ledc_channel = {
         .gpio_num       = mGpioDriver,
         .speed_mode     = LEDC_LOW_SPEED_MODE,
-        .channel        = LEDC_CHANNEL_0,
+        .channel        = mPwmChannel,
         .intr_type      = LEDC_INTR_DISABLE,
         .timer_sel      = LEDC_TIMER_0,
         .duty           = 0,
@@ -80,8 +76,9 @@ void Driver::Init(void)
     }
 }
 
-Driver::Driver(gpio_num_t gpioDriver, const char* taskName, UBaseType_t taskPriority, uint16_t taskStackSize)
+Driver::Driver(gpio_num_t gpioDriver, ledc_channel_t pwmChannel, const char* taskName, UBaseType_t taskPriority, uint16_t taskStackSize)
     : mGpioDriver(gpioDriver),
+      mPwmChannel(pwmChannel),
       mTaskName(taskName),
       mTaskPriority(taskPriority),
       mTaskStackSize(taskStackSize),

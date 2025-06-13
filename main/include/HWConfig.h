@@ -33,12 +33,14 @@
 #define KEY2_TASK_STACK_SIZE            (4096)
 #define KEY2_TASK_PRIORITY              (10)
 
-#define DRV1_GPIO                       GPIO_NUM_18           
+#define DRV1_GPIO                       GPIO_NUM_18    
+#define DRV1_GPIO_CHANNEL               LEDC_CHANNEL_0       
 #define DRV1_TASK_NAME                  "Driver1"
 #define DRV1_TASK_STACK_SIZE            (4096)
 #define DRV1_TASK_PRIORITY              (10)
 
-#define DRV2_GPIO                       GPIO_NUM_19           
+#define DRV2_GPIO                       GPIO_NUM_19   
+#define DRV2_GPIO_CHANNEL               LEDC_CHANNEL_1               
 #define DRV2_TASK_NAME                  "Driver2"
 #define DRV2_TASK_STACK_SIZE            (4096)
 #define DRV2_TASK_PRIORITY              (10)

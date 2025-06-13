@@ -26,6 +26,9 @@ extern "C" void app_main(void)
     [[maybe_unused]] static int test_state_2 = 0;
 
     uint32_t duty = 0;
+    uint32_t duty2 = 200;
+    bool dir = false;
+    bool dir2 = false;
     
     Led yelLed(YELLOW_LED, YELLOW_LED_TASK_NAME, YELLOW_LED_TASK_PRIORITY, YELLOW_LED_TASK_STACK_SIZE);
     yelLed.Init();
@@ -39,20 +42,23 @@ extern "C" void app_main(void)
     Button Key2Button(KEY2_GPIO, KEY2_TASK_NAME, KEY2_TASK_PRIORITY, KEY2_TASK_STACK_SIZE);
     Key2Button.Init();
 
-    Driver Pwm1Driver(DRV1_GPIO, DRV1_TASK_NAME, DRV1_TASK_PRIORITY, DRV1_TASK_STACK_SIZE);
+    Driver Pwm1Driver(DRV1_GPIO, DRV1_GPIO_CHANNEL, DRV1_TASK_NAME, DRV1_TASK_PRIORITY, DRV1_TASK_STACK_SIZE);
     Pwm1Driver.Init();
 
-    Driver Pwm2Driver(DRV2_GPIO, DRV2_TASK_NAME, DRV2_TASK_PRIORITY, DRV2_TASK_STACK_SIZE);
+    Driver Pwm2Driver(DRV2_GPIO, DRV2_GPIO_CHANNEL, DRV2_TASK_NAME, DRV2_TASK_PRIORITY, DRV2_TASK_STACK_SIZE);
     Pwm2Driver.Init();
 
-    yelLed.SetLedState(Led::State::sOff); 
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    yelLed.SetLedState(Led::State::sOff);  
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     yelLed.SetLedState(Led::State::sOn); 
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     yelLed.SetLedState(Led::State::sOff); 
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    Pwm1Driver.SetDriverEnable(true);
+    Pwm2Driver.SetDriverEnable(true);
 
     while (1) {
 
@@ -115,16 +121,38 @@ extern "C" void app_main(void)
 
         prevStateKey1 = currentStateKey1;
         prevStateKey2 = currentStateKey2;
-
-        // Pwm1Driver.SetDriverEnable(true);
-        // Pwm2Driver.SetDriverEnable(true);
         
-        // Pwm1Driver.SetPwm(duty);
-        // Pwm2Driver.SetPwm(duty);
-        // duty++; 
-        // if(duty > 1023) duty = 0;
+        Pwm1Driver.SetPwm(duty);
+        Pwm2Driver.SetPwm(duty2); // zimny led
+        if (dir == false)
+        { 
+            duty= duty + 10;
+        }
+        else 
+        { 
+            duty = duty - 10; 
+        }
+        if(duty > 200 || duty < 0) 
+        { 
+            duty = 0;
+            dir = !dir;
+        }
+        
+        if (dir2 == false)
+        { 
+            duty2= duty2 + 10;
+        }
+        else 
+        { 
+            duty2 = duty2 - 10; 
+        }
+        if(duty2 > 200 || duty2 < 0) 
+        { 
+            duty2 = 0;
+            dir2 = !dir2;
+        }
 
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+        vTaskDelay(64 / portTICK_PERIOD_MS);
 
     }
 }

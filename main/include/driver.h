@@ -13,7 +13,7 @@ class Driver
 {
 public:
 
-    Driver(gpio_num_t gpioDriver, const char* taskName, UBaseType_t taskPriority, uint16_t taskStackSize);
+    Driver(gpio_num_t gpioDriver, ledc_channel_t pwmChannel, const char* taskName, UBaseType_t taskPriority, uint16_t taskStackSize);
 
     void Init(void);
 
@@ -23,6 +23,8 @@ public:
 
 private:
     gpio_num_t      mGpioDriver;
+    ledc_channel_t  mPwmChannel;
+
     const char*     mTaskName;
     UBaseType_t     mTaskPriority;
     uint16_t        mTaskStackSize;
