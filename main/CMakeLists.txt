@@ -1,15 +1,14 @@
-# AB
-
 set (src    "./main.cpp"
             "./led.cpp"
             "./button.cpp"
             "./driver.cpp"
-            "./ina219.c"
-            "./pi4ioe5v9554.c"
+            "./current_sense.cpp"
+            "../drivers/INA219/ina219.c"
     )
 
 set (inc    "."
             "./include/"
+            "../drivers/INA219/"
     )
 
 idf_component_register(SRCS ${src}

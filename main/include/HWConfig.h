@@ -11,8 +11,6 @@
 
 #pragma once
 
-#include "pi4ioe5v9554.h"
-
 #define YELLOW_LED                      GPIO_NUM_7
 #define YELLOW_LED_TASK_NAME            "Yellow_LED"
 #define YELLOW_LED_TASK_STACK_SIZE      (4096)
@@ -48,14 +46,12 @@
 #define I2C_PORT I2C_NUM_0
 #define SDA_PIN                         GPIO_NUM_4
 #define SCL_PIN                         GPIO_NUM_5
-#define I2C_MASTER_SDA_IO     4
-#define I2C_MASTER_SCL_IO     5
-#define I2C_MASTER_FREQ_HZ    100000
+#define I2C_MASTER_SDA_IO               4
+#define I2C_MASTER_SCL_IO               5
+#define I2C_MASTER_FREQ_HZ              100000
 
-#define PORT_EXPANDER_INSTANCE_ID 0                                            // OK
-#define PORT_EXPANDER_I2C_NUM     0                                            // OK
-#define PORT_EXPANDER_I2C_ADDR    0x20                                         // OK
-#define PORT_EXPANDER_I2C_SDA     MIXER_SDA_GPIO                               // OK
-#define PORT_EXPANDER_I2C_SCL     MIXER_SCL_GPIO                               // OK
+#define INA219_COLD_INSTANCE            0 
+#define INA219_WARM_INSTANCE            1 
+#define SHUNT_RESISTOR_OHMS             0.15
 
 

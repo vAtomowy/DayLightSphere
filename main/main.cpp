@@ -11,7 +11,7 @@
 #include "led.h"
 #include "button.h"
 #include "driver.h"
-#include "ina219.h"
+#include "current_sense.h"
 #include "driver/i2c.h"
 
 #define LED_RED GPIO_NUM_6
@@ -19,38 +19,6 @@
 static const char* TAG = "main";
 
 static int s_led_state = 0; 
-
-void i2c_scan() {
-    i2c_config_t conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = SDA_PIN,
-        .scl_io_num = SCL_PIN,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master = {
-            .clk_speed = I2C_MASTER_FREQ_HZ,
-        },
-        .clk_flags = 0
-    };
-
-    ESP_ERROR_CHECK(i2c_param_config(I2C_PORT, &conf));
-    ESP_ERROR_CHECK(i2c_driver_install(I2C_PORT, I2C_MODE_MASTER, 0, 0, 0));
-
-    printf("I2C scan...\n");
-    for (uint8_t addr = 1; addr < 127; addr++) {
-        i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-        i2c_master_start(cmd);
-        i2c_master_write_byte(cmd, (addr << 1) | I2C_MASTER_WRITE, true);
-        i2c_master_stop(cmd);
-        esp_err_t err = i2c_master_cmd_begin(I2C_PORT, cmd, pdMS_TO_TICKS(100));
-        i2c_cmd_link_delete(cmd);
-
-        if (err == ESP_OK) {
-            printf("Found device at 0x%02X\n", addr);
-        }
-    }
-    printf("Scan done.\n");
-}
 
 extern "C" void app_main(void)
 {
@@ -94,16 +62,9 @@ extern "C" void app_main(void)
     Pwm1Driver.SetDriverEnable(true);
     Pwm2Driver.SetDriverEnable(true);
 
-    // ESP_ERROR_CHECK(i2c_master_init(I2C_PORT, (gpio_num_t)SDA_PIN, (gpio_num_t)SCL_PIN));
-    // ESP_LOGI(TAG, "I2C initialized");
-
-    i2c_scan();
-
-    // ESP_ERROR_CHECK(ina219_write_register(I2C_PORT, INA219_REG_CONFIG, 0x019F));
-    // vTaskDelay(pdMS_TO_TICKS(10));
-
-    // uint16_t shunt_raw = 0;
-    // uint16_t bus_raw = 0;
+    CurrentSenseMgr().Init();
+    float ledWarm = CurrentSenseMgr().GetBusVoltage(0);
+    float ledCold  = CurrentSenseMgr().GetBusVoltage(1);
 
     while (1) {
 
@@ -200,12 +161,7 @@ extern "C" void app_main(void)
         // vTaskDelay(64 / portTICK_PERIOD_MS);
 
         //TEST3
-        //i2c_scan(I2C_PORT);
-        // ESP_ERROR_CHECK(ina219_read_register(I2C_PORT, INA219_REG_SHUNT_V, &shunt_raw));
-        // ESP_ERROR_CHECK(ina219_read_register(I2C_PORT, INA219_REG_BUS_V, &bus_raw));
-
-        // ESP_LOGI(TAG, "Shunt Voltage Raw: 0x%04X (%d)", shunt_raw, (int16_t)shunt_raw);
-        // ESP_LOGI(TAG, "Bus Voltage Raw:  0x%04X", bus_raw);
+        //?
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
 }

@@ -6,6 +6,8 @@
 #include "HWConfig.h"
 #include <atomic>
 
+#include "driver/gpio.h"
+
 class Button
 {
 public:
