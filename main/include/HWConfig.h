@@ -43,15 +43,23 @@
 #define DRV2_TASK_STACK_SIZE            (4096)
 #define DRV2_TASK_PRIORITY              (10)
 
-#define I2C_PORT I2C_NUM_0
-#define SDA_PIN                         GPIO_NUM_4
-#define SCL_PIN                         GPIO_NUM_5
-#define I2C_MASTER_SDA_IO               4
-#define I2C_MASTER_SCL_IO               5
-#define I2C_MASTER_FREQ_HZ              100000
 
-#define INA219_COLD_INSTANCE            0 
-#define INA219_WARM_INSTANCE            1 
+#define CURR_SENSE_I2C_PORT             I2C_NUM_0
+#define CURR_SENSE_SDA_PIN              GPIO_NUM_4
+#define CURR_SENSE_SCL_PIN              GPIO_NUM_5
+
+#define CURR_SENSE_COLD_ID_INSTANCE     0
+#define CURR_SENSE_COLD_I2C_ADDR        0x40
+#define CURR_SENSE_COLD_TASK_NAME       "CurrSenseCold"
+#define CURR_SENSE_COLD_TASK_STACK_SIZE (4096)
+#define CURR_SENSE_COLD_TASK_PRIORITY   (10)
+
+#define CURR_SENSE_WARM_ID_INSTANCE     1
+#define CURR_SENSE_WARM_I2C_ADDR        0x41
+#define CURR_SENSE_WARM_TASK_NAME       "CurrSenseWarm"
+#define CURR_SENSE_WARM_TASK_STACK_SIZE (4096)
+#define CURR_SENSE_WARM_TASK_PRIORITY   (10)
+
 #define SHUNT_RESISTOR_OHMS             0.15
 
 

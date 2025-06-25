@@ -1,3 +1,3 @@
-[submodule "drivers/INA219"]
-	path = drivers/INA219
+[submodule "components/drivers/INA219"]
+	path = components/drivers/INA219
 	url = https://github.com/vAtomowy/DRV_INA219.git

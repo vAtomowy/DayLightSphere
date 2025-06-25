@@ -3,12 +3,12 @@ set (src    "./main.cpp"
             "./button.cpp"
             "./driver.cpp"
             "./current_sense.cpp"
-            "../drivers/INA219/ina219.c"
+            "../components/drivers/INA219/ina219.c"
     )
 
 set (inc    "."
             "./include/"
-            "../drivers/INA219/"
+            "../components/drivers/INA219/"
     )
 
 idf_component_register(SRCS ${src}
