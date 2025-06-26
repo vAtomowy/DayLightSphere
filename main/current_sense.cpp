@@ -3,6 +3,9 @@
 
 static const char* TAG = "CurrentSense";
 
+i2c_port_t CurrentSense::sI2cPortsInitialized[CurrentSense::kMaxInstances] = {};
+size_t CurrentSense::sI2cPortsCount = 0;
+
 void CurrentSense::CurrentSenseTask(void* pvParameter)
 {
     CurrentSense* self = (CurrentSense*)pvParameter;
@@ -14,7 +17,6 @@ void CurrentSense::CurrentSenseTask(void* pvParameter)
         vTaskDelay(pdMS_TO_TICKS(25));
     } 
 }
-
 
 float CurrentSense::GetBusVoltage()
 {
@@ -53,26 +55,50 @@ void CurrentSense::Init()
 {
     esp_err_t err = ESP_OK;
 
+    bool i2cAlreadyInitialized = false;
+
     mCurrentSenseCfg.i2c_num = mI2cPort;
     mCurrentSenseCfg.i2c_addr = mI2cAddr;
 
-    i2c_config_t ina219_i2c_cfg = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = mSdaPin,                  
-        .scl_io_num = mSclPin,             
-        .sda_pullup_en = GPIO_PULLUP_DISABLE,
-        .scl_pullup_en = GPIO_PULLUP_DISABLE,
-        .master = {
-            .clk_speed = INA219_DEFAULT_SPEED_HZ
-        },
-        .clk_flags = 0
-    };
+    ESP_LOGI(TAG, "Init started for I2C port %d", mCurrentSenseCfg.i2c_num);
 
-    i2c_driver_delete(mCurrentSenseCfg.i2c_num);
+    for (size_t i = 0; i < CurrentSense::sI2cPortsCount; i++) {
+        ESP_LOGI(TAG, "Checking initialized port at index %d: %d", i, CurrentSense::sI2cPortsInitialized[i]);
+        if (CurrentSense::sI2cPortsInitialized[i] == mCurrentSenseCfg.i2c_num) {
+            ESP_LOGI(TAG, "I2C port %d already initialized, skipping driver install.", mCurrentSenseCfg.i2c_num);
+            i2cAlreadyInitialized = true;
+            break;
+        }
+    }
 
-    ESP_ERROR_CHECK(i2c_param_config(mCurrentSenseCfg.i2c_num, &ina219_i2c_cfg));
+    if (!i2cAlreadyInitialized) {
+        ESP_LOGI(TAG, "Configuring I2C driver for port %d", mCurrentSenseCfg.i2c_num);
 
-    ESP_ERROR_CHECK(i2c_driver_install(mCurrentSenseCfg.i2c_num, ina219_i2c_cfg.mode, 0, 0, 0));
+        i2c_config_t ina219_i2c_cfg = {
+            .mode = I2C_MODE_MASTER,
+            .sda_io_num = mSdaPin,                  
+            .scl_io_num = mSclPin,             
+            .sda_pullup_en = GPIO_PULLUP_DISABLE,
+            .scl_pullup_en = GPIO_PULLUP_DISABLE,
+            .master = {
+                .clk_speed = INA219_DEFAULT_SPEED_HZ
+            },
+            .clk_flags = 0
+        };
+
+        ESP_LOGI(TAG, "Setting I2C parameters");
+        ESP_ERROR_CHECK(i2c_param_config(mCurrentSenseCfg.i2c_num, &ina219_i2c_cfg));
+
+        ESP_LOGI(TAG, "Installing I2C driver");
+        ESP_ERROR_CHECK(i2c_driver_install(mCurrentSenseCfg.i2c_num, ina219_i2c_cfg.mode, 0, 0, 0));
+
+        if (CurrentSense::sI2cPortsCount < CurrentSense::kMaxInstances) {
+            CurrentSense::sI2cPortsInitialized[CurrentSense::sI2cPortsCount++] = mCurrentSenseCfg.i2c_num;
+            ESP_LOGI(TAG, "Port %d added to initialized list at index %d", mCurrentSenseCfg.i2c_num, CurrentSense::sI2cPortsCount - 1);
+        } else {
+            ESP_LOGW(TAG, "Too many INA219 instances, can't track I2C port %d", mCurrentSenseCfg.i2c_num);
+        }
+    }
 
     err = ina219_init(mIdInstance, &mCurrentSenseCfg);
     if (err != ESP_OK) {
@@ -81,16 +107,9 @@ void CurrentSense::Init()
         ESP_LOGI(TAG, "INA219 init success (instance %d)", mIdInstance);
     }
 
-    uint16_t config =
-        INA219_BVOLTAGERANGE_32V      |  // 0x2000
-        INA219_GAIN_8_320MV           |  // 0x1800
-        INA219_BADCRES_12BIT_128S     |  // 0x0780
-        INA219_SADCRES_12BIT_128S     |  // 0x0078
-        INA219_MODE_SANDBVOLT_CONTINUOUS; // 0x0007
+    ina219_configure(mIdInstance, kDefaultConfig, pdMS_TO_TICKS(10)); 
 
-    ina219_configure(mIdInstance, config, pdMS_TO_TICKS(10)); 
-
-    ina219_calibration(mIdInstance, 0x6AA2, pdMS_TO_TICKS(10)); 
+    ina219_calibration(mIdInstance, kDefaultCalibration, pdMS_TO_TICKS(10)); 
 
     if (err == ESP_OK)
     {
