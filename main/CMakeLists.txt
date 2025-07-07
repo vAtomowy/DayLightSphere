@@ -3,6 +3,7 @@ set (src    "./main.cpp"
             "./button.cpp"
             "./driver.cpp"
             "./current_sense.cpp"
+            "./pid_controller.cpp"
             "../components/drivers/INA219/ina219.c"
     )
 
