@@ -1,67 +1,81 @@
 #include "pid_controller.h"
 #include "esp_log.h"
 
-#define TAG "PidController"
+static const char* TAG = "PID";
 
-PidController::PidController()
-    : mDriver(DRV1_GPIO, DRV1_GPIO_CHANNEL, DRV1_TASK_NAME, DRV1_TASK_PRIORITY, DRV1_TASK_STACK_SIZE),
-      mCurrentSense(
-          CURR_SENSE_COLD_ID_INSTANCE,
-          CURR_SENSE_I2C_PORT,
-          CURR_SENSE_COLD_I2C_ADDR,
-          CURR_SENSE_SDA_PIN,
-          CURR_SENSE_SCL_PIN,
-          CURR_SENSE_COLD_TASK_NAME,
-          CURR_SENSE_COLD_TASK_PRIORITY,
-          CURR_SENSE_COLD_TASK_STACK_SIZE)
+void PIDController::PidTask(void* pvParameter)
 {
-    mTargetCurrent = 0.0f;
-    mLastUpdate = xTaskGetTickCount();
+    PIDController* self = static_cast<PIDController*>(pvParameter);
+    ESP_LOGI(TAG, "PID Task started");
+
+    while (true)
+    {
+        float current = self->mCurrentSense.GetCurrent(); 
+        float error = self->mTarget - current;
+
+        self->mIntegral += error * 0.1f; 
+        float derivative = (error - self->mPrevError) / 0.1f;
+
+        float output = self->mKp * error + self->mKi * self->mIntegral + self->mKd * derivative;
+
+        // Konwersja na PWM
+        int pwm = static_cast<int>(output);
+        if (pwm > 1023) pwm = 1023;
+        if (pwm < 0) pwm = 0;
+
+        self->mDriver.SetPwm(static_cast<uint32_t>(pwm));
+
+        self->mPrevError = error;
+
+        ESP_LOGI(TAG, "PID: Target=%.2f A, Current=%.2f A, PWM=%d", self->mTarget, current, pwm);
+
+        vTaskDelay(kPidTaskPeriod);
+    }
 }
 
-void PidController::Init()
+void PIDController::SetTarget(float target)
 {
-    mDriver.Init();
-    mDriver.SetDriverEnable(true);
-
-    mCurrentSense.Init();
+    mTarget = target;
 }
 
-void PidController::SetTargetCurrent(float target)
+void PIDController::Reset()
 {
-    mTargetCurrent = target;
+    mIntegral = 0.0f;
+    mPrevError = 0.0f;
 }
 
-void PidController::UpdateControlLoop()
+void PIDController::Init()
 {
-    float current = mCurrentSense.GetCurrent();
-    float error = mTargetCurrent - current;
+    BaseType_t result = xTaskCreate(PidTask, mTaskName, mTaskStackSize, this, mTaskPriority, &mPidTaskHandle);
 
-    TickType_t now = xTaskGetTickCount();
-    float dt = (now - mLastUpdate) / 1000.0f;
-    mLastUpdate = now;
-
-    mIntegral += error * dt;
-    float derivative = (error - mPrevError) / dt;
-    mPrevError = error;
-
-    float output = mKp * error + mKi * mIntegral + mKd * derivative;
-
-    uint32_t pwmDuty = static_cast<uint32_t>(output * 1023.0f);
-    if (pwmDuty > 1023) pwmDuty = 1023;
-    if (pwmDuty < 0) pwmDuty = 0;
-
-    mDriver.SetPwm(pwmDuty);
-
-    ESP_LOGI(TAG, "Target: %.3f A, Measured: %.3f A, PWM: %u", mTargetCurrent, current, pwmDuty);
+    if (result != pdPASS)
+    {
+        ESP_LOGE(TAG, "Failed to create PID task");
+    }
+    else
+    {
+        ESP_LOGI(TAG, "PID task created");
+    }
 }
 
-float PidController::GetVoltage() const
+PIDController::PIDController(
+    CurrentSense& currentSense,
+    Driver& driver,
+    const char* taskName,
+    UBaseType_t taskPriority,
+    uint16_t taskStackSize,
+    float kp,
+    float ki,
+    float kd)
+    : mCurrentSense(currentSense),
+      mDriver(driver),
+      mTaskName(taskName),
+      mTaskPriority(taskPriority),
+      mTaskStackSize(taskStackSize),
+      mPidTaskHandle(nullptr),
+      mKp(kp), mKi(ki), mKd(kd),
+      mTarget(0.0f),
+      mIntegral(0.0f),
+      mPrevError(0.0f)
 {
-    return mCurrentSense.GetBusVoltage();
-}
-
-float PidController::GetCurrent() const
-{
-    return mCurrentSense.GetCurrent();
 }

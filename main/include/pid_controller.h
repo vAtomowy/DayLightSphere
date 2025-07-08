@@ -5,26 +5,38 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-class PidController
+class PIDController
 {
 public:
-    PidController();
+    PIDController(
+        CurrentSense& currentSense,
+        Driver& driver,
+        const char* taskName,
+        UBaseType_t taskPriority,
+        uint16_t taskStackSize,
+        float kp,
+        float ki,
+        float kd
+    );
+
     void Init();
-    void UpdateControlLoop();  
-    void SetTargetCurrent(float target);  
-    float GetVoltage() const;
-    float GetCurrent() const;
+    void SetTarget(float target);
+    void Reset();
 
 private:
-    Driver mDriver;
-    CurrentSense mCurrentSense;
-    
-    float mTargetCurrent;
-    float mKp = 0.1f;  
-    float mKi = 0.0f;
-    float mKd = 0.0f;
-    float mIntegral = 0.0f;
-    float mPrevError = 0.0f;
+    CurrentSense& mCurrentSense;
+    Driver& mDriver;
 
-    TickType_t mLastUpdate;
+    const char*     mTaskName;
+    UBaseType_t     mTaskPriority;
+    uint16_t        mTaskStackSize;
+    TaskHandle_t    mPidTaskHandle;
+
+    float mKp, mKi, mKd;
+    float mTarget;
+    float mIntegral;
+    float mPrevError;
+
+    static constexpr TickType_t kPidTaskPeriod = pdMS_TO_TICKS(100); 
+    static void PidTask(void* pvParameter);
 };
