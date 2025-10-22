@@ -18,7 +18,6 @@ void PIDController::PidTask(void* pvParameter)
 
         float output = self->mKp * error + self->mKi * self->mIntegral + self->mKd * derivative;
 
-        // Konwersja na PWM
         int pwm = static_cast<int>(output);
         if (pwm > 1023) pwm = 1023;
         if (pwm < 0) pwm = 0;

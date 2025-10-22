@@ -47,7 +47,7 @@ void Driver::InitPwm()
         .speed_mode       = LEDC_LOW_SPEED_MODE,
         .duty_resolution  = LEDC_TIMER_10_BIT, // 0-1023
         .timer_num        = LEDC_TIMER_0,
-        .freq_hz          = 5000,              // 5kHz
+        .freq_hz          = 50000,              // 50kHz
         .clk_cfg          = LEDC_AUTO_CLK
     };
     ledc_timer_config(&ledc_timer);
