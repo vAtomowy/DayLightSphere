@@ -1,6 +1,6 @@
 /**
  * @file HWConfig.h
- * @author Artur Bereit (abereit@softblue.pl)
+ * @author Artur Bereit
  * @brief 
  * @version 0.1
  * @date 2024-06-10
@@ -21,45 +21,34 @@
 #define RED_LED_TASK_STACK_SIZE         (4096)
 #define RED_LED_TASK_PRIORITY           (10)
 
-#define KEY1_GPIO                       GPIO_NUM_9
+#define KEY1_GPIO                       GPIO_NUM_10
 #define KEY1_TASK_NAME                  "Key1"
 #define KEY1_TASK_STACK_SIZE            (4096)
 #define KEY1_TASK_PRIORITY              (10)
 
-#define KEY2_GPIO                       GPIO_NUM_8
-#define KEY2_TASK_NAME                  "Key2"
-#define KEY2_TASK_STACK_SIZE            (4096)
-#define KEY2_TASK_PRIORITY              (10)
+#define I2C_A_PORT I2C_NUM_0
+#define I2C_A_PIN_SDA                   GPIO_NUM_5
+#define I2C_A_PIN_SCL                   GPIO_NUM_4
+#define I2C_A_MASTER_SDA_IO             5
+#define I2C_A_MASTER_SCL_IO             4
+#define I2C_A_MASTER_FREQ_HZ            100000
 
-#define DRV1_GPIO                       GPIO_NUM_18    
-#define DRV1_GPIO_CHANNEL               LEDC_CHANNEL_0       
-#define DRV1_TASK_NAME                  "Driver1"
-#define DRV1_TASK_STACK_SIZE            (4096)
-#define DRV1_TASK_PRIORITY              (10)
+// Found device at 0x60                                      
+// Found device at 0x61
 
-#define DRV2_GPIO                       GPIO_NUM_19   
-#define DRV2_GPIO_CHANNEL               LEDC_CHANNEL_1               
-#define DRV2_TASK_NAME                  "Driver2"
-#define DRV2_TASK_STACK_SIZE            (4096)
-#define DRV2_TASK_PRIORITY              (10)
+#define I2C_B_PORT I2C_NUM_0
+#define I2C_B_PIN_SDA                   GPIO_NUM_2
+#define I2C_B_PIN_SCL                   GPIO_NUM_3
+#define I2C_B_MASTER_SDA_IO             2
+#define I2C_B_MASTER_SCL_IO             3
+#define I2C_B_MASTER_FREQ_HZ            100000
 
-
-#define CURR_SENSE_I2C_PORT             I2C_NUM_0
-#define CURR_SENSE_SDA_PIN              GPIO_NUM_4
-#define CURR_SENSE_SCL_PIN              GPIO_NUM_5
-
-#define CURR_SENSE_COLD_ID_INSTANCE     0
-#define CURR_SENSE_COLD_I2C_ADDR        0x40
-#define CURR_SENSE_COLD_TASK_NAME       "CurrSenseCold"
-#define CURR_SENSE_COLD_TASK_STACK_SIZE (4096)
-#define CURR_SENSE_COLD_TASK_PRIORITY   (10)
-
-#define CURR_SENSE_WARM_ID_INSTANCE     1
-#define CURR_SENSE_WARM_I2C_ADDR        0x41
-#define CURR_SENSE_WARM_TASK_NAME       "CurrSenseWarm"
-#define CURR_SENSE_WARM_TASK_STACK_SIZE (4096)
-#define CURR_SENSE_WARM_TASK_PRIORITY   (10)
-
-#define SHUNT_RESISTOR_OHMS             0.15
-
-
+// Found device at 0x50                                      
+// Found device at 0x51                                      
+// Found device at 0x52                                      
+// Found device at 0x53                                      
+// Found device at 0x54                                                        
+// Found device at 0x55
+// Found device at 0x56
+// Found device at 0x57
+  
